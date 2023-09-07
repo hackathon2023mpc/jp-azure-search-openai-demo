@@ -2,25 +2,30 @@
 
 ## Table of Contents
 
-- [機能](#機能)
-- [はじめに](#はじめに)
-- [Azure へのデプロイ](#azure-へのデプロイ)
-  - [コスト見積もり](#コスト見積もり)
-  - [前提条件](#前提条件)
-    - [ローカルで実行する場合](#ローカルで実行する場合)
-    - [GitHub Codespaces または VS Code Remote Containers で実行する場合](#github-codespaces-または-vs-code-remote-containers-で実行する場合)
-  - [新規でデプロイする](#新規でデプロイする)
+- [ChatGPT + Enterprise data with Azure OpenAI and Cognitive Search](#chatgpt--enterprise-data-with-azure-openai-and-cognitive-search)
+  - [Table of Contents](#table-of-contents)
+  - [機能](#機能)
+  - [はじめに](#はじめに)
+  - [Azure へのデプロイ](#azure-へのデプロイ)
+    - [コスト見積もり](#コスト見積もり)
+    - [前提条件](#前提条件)
+      - [ローカルで実行する場合](#ローカルで実行する場合)
+      - [GitHub Codespaces または VS Code Remote Containers で実行する場合](#github-codespaces-または-vs-code-remote-containers-で実行する場合)
+    - [新規でデプロイする](#新規でデプロイする)
   - [既存のリソースでのデプロイ](#既存のリソースでのデプロイ)
-  - [再デプロイ](#再デプロイ)
-- [環境の共有](#環境の共有)
-- [ローカルで実行](#ローカルで実行)
-- [Web アプリの使用](#Web-アプリの使用)
-- [オプション機能の有効化](#オプション機能の有効化)
-  - [Application Insights の有効化](#application-insights-の有効化)
-  - [認証の有効化](#認証の有効化)
-- [Resources](#resources)
-  - [FAQ](#faq)
-  - [トラブルシューティング](#トラブルシューティング)
+    - [再デプロイ](#再デプロイ)
+  - [環境の共有](#環境の共有)
+  - [ローカルで実行](#ローカルで実行)
+  - [Web アプリの使用](#web-アプリの使用)
+  - [オプション機能の有効化](#オプション機能の有効化)
+    - [Application Insights の有効化](#application-insights-の有効化)
+    - [認証の有効化](#認証の有効化)
+  - [Running locally](#running-locally)
+  - [Using the app](#using-the-app)
+  - [Productionizing](#productionizing)
+  - [Resources](#resources)
+    - [FAQ](#faq)
+    - [トラブルシューティング](#トラブルシューティング)
 
 [![Open in GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub+Codespaces&message=Open&color=brightgreen&logo=github)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=599293758&machine=standardLinux32gb&devcontainer_path=.devcontainer%2Fdevcontainer.json&location=WestUs2)
 [![Open in Remote - Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Remote%20-%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/azure-samples/azure-search-openai-demo)
@@ -47,20 +52,21 @@
 > **重要:** このサンプルをデプロイして実行するには、**Azure OpenAI Service へのアクセスを有効にした** Azure サブスクリプションが必要です。[こちら](https://aka.ms/oaiapply)でアクセスをリクエストできます。また、[こちら](https://azure.microsoft.com/free/cognitive-search/) から開始するための無料の Azure クレジットを取得することもできます。
 
 
-## Azure へのデプロイ 
+## Azure へのデプロイ
 
 ### コスト見積もり
 
 価格はリージョンや利用方法によって異なるため、あなたの利用方法に対する正確なコストを予測することはできません。ただし、以下のリソースについては、[Azure 価格計算ツール](https://azure.com/e/8ffbe5b1919c4c72aed89b022294df76) をお試しください。
 
-- Azure App Service: Basic Tier、1CPU コア、1.75GB RAM。1 時間あたりの[価格](https://azure.microsoft.com/pricing/details/app-service/linux/)
-- Azure OpenAI: Standard Tier、ChatGPT、Ada モデル。使用された 1K トークンあたりの価格、および 1 問あたり少なくとも 1K トークンが使用されます。[価格](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/)
-- Form Recognizer: S0(Standard) Tier は、あらかじめ構築されたレイアウトを使用します。価格はドキュメント ページあたりの課金です。[価格](https://azure.microsoft.com/pricing/details/form-recognizer/)
-- Azure Cognitive Search: Standard Tier, 1 レプリカ、無料レベルのセマンティック検索。1 時間あたりの[価格](https://azure.microsoft.com/pricing/details/search/)
-- Azure Blob Storage: Standard Tier LRS（ローカル冗長）。ストレージと読み取り操作ごとの価格。[価格](https://azure.microsoft.com/pricing/details/storage/blobs/)
+- Azure App Service: Basic Tier 1CPU コア、1.75GB RAM。1 時間あたりの[価格](https://azure.microsoft.com/pricing/details/app-service/linux/)
+- Azure OpenAI: Standard、ChatGPT、Ada モデル。使用された 1K トークンあたりの価格、および 1 問あたり少なくとも 1K トークンが使用されます。[価格](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/)
+- Form Recognizer: SO(スタンダード)プランは、あらかじめ構築されたレイアウトを使用します。価格はドキュメント 1 ページあたり、サンプルドキュメントは合計 261 ページです。[価格](https://azure.microsoft.com/pricing/details/form-recognizer/)
+- Azure Cognitive Search: Standard tier, 1 レプリカ、無料レベルのセマンティック検索。1時間あたりの[価格](https://azure.microsoft.com/pricing/details/search/)
+- Azure Blob Storage: Standard tier ZRS（ゾーン冗長）。ストレージと読み取り操作ごとの価格。[価格](https://azure.microsoft.com/pricing/details/storage/blobs/)
 - Azure Monitor: 従量課金制。費用は、取り込んだデータに基づいて計算されます。[価格](https://azure.microsoft.com/pricing/details/monitor/)
 
 コストを削減するために、`infra` フォルダの下のパラメータファイルを変更することで、Azure App Service、Azure Cognitive Search、Form Recognizer の無料 SKU に切り替えることができます。例えば、無料の Cognitive Search リソースは 1 サブスクリプションにつき 1 つまでで、無料の Form Recognizer リソースは各ドキュメントの最初の 2 ページのみを分析します。また、`data` フォルダ内のドキュメント数を減らすか、`prepdocs.py` スクリプトを実行する `azure.yaml` の postprovision フックを削除することで、Form Recognizer に関連するコストを削減することができます。
+
 
 ⚠️ 不要なコストを避けるために、アプリが使われなくなったら、忘れずにアプリを削除してください、ポータルでリソースグループを削除するか、`azd down` を実行してください。
 
@@ -68,12 +74,10 @@
 
 #### ローカルで実行する場合
 
-First install the required tools:
-
 * [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
 * [Python 3.9+](https://www.python.org/downloads/)
-  * **重要**: セットアップスクリプトを動作させるには、Windows のパスに Python と pip パッケージマネージャが含まれている必要があります。Python を Microsoft Store 経由でインストールすると、うまく実行できないことがあります。Python 公式サイトからインストーラをダウンロードして、手動でインストールしてください。
-  * **重要**: コンソールから `python --version` を実行できることを確認します。Ubuntu では、`python` を `python3` にリンクするために、`sudo apt install python-is-python3` を実行する必要があるかもしれません。
+  * **重要**: セットアップスクリプトを動作させるには、Windows のパスに Python と pip パッケージマネージャが含まれている必要があります。
+  * **重要**: コンソールから `python --version` を実行できることを確認します。Ubuntu では、`python` を `python3` にリンクするために、`sudo apt install python-is-python3` を実行する必要があるかもしれない。
 * [Node.js 14+](https://nodejs.org/en/download/)
 * [Git](https://git-scm.com/downloads)
 * [Powershell 7+ (pwsh)](https://github.com/powershell/powershell) - Windows ユーザーのみ。
@@ -89,28 +93,18 @@ GitHub Codespaces または VS Code Remote Containers を使えば、このレ�
 [![Open in Remote - Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Remote%20-%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/azure-samples/azure-search-openai-demo)
 
 ### 新規でデプロイする
-* [Powershell 7+ (pwsh)](https://github.com/powershell/powershell) - For Windows users only.
-  * **Important**: Ensure you can run `pwsh.exe` from a PowerShell terminal. If this fails, you likely need to upgrade PowerShell.
 
-Then bring down the project code:
-
-1. Create a new folder and switch to it in the terminal
-1. Run `azd auth login`
-1. Run `azd init -t azure-search-openai-demo`
-    * note that this command will initialize a git repository and you do not need to clone this repository
-
-既存の Azure サービスがなく、新しいデプロイから始めたい場合は、以下のコマンドを実行します。
+既存の Azure サービスがなく、新しいデプロイから始めたい場合は、以下のコマンドを実行する。
 
 1. `azd up` を実行する - Azure リソースをプロビジョニングし、`./data` フォルダにあるファイルに基づいて検索インデックスを構築するなど、これらのリソースにこのサンプルをデプロイします。
-    * このロケーションリストは [OpenAI モデル利用可能リージョン一覧](https://learn.microsoft.com/azure/cognitive-services/openai/concepts/models#model-summary-table-and-region-availability)に基づいており、可用性が変わると古くなる可能性があります。
-1. アプリケーションが正常にデプロイされると、コンソールに URL が表示されます。 その URL をクリックして、ブラウザでアプリケーションを操作してください。
+    * 2 つの場所を選択するプロンプトが表示されます。1 つは大部分のリソース用、もう 1 つは OpenAI リソース用です。このロケーションリストは[OpenAI model 利用可能リージョン表](https://learn.microsoft.com/azure/cognitive-services/openai/concepts/models#model-summary-table-and-region-availability)に基づいており、可用性が変わると古くなる可能性があります。
+2. アプリケーションが正常にデプロイされると、コンソールに URL が表示されます。 その URL をクリックして、ブラウザでアプリケーションを操作してください。
 
 以下のような表示になります。
 
 !['Output from running azd up'](assets/endpoint.png)
 
 > NOTE: アプリケーションが完全にデプロイされるまで 1 分ほどかかるかもしれません。"Python Developer" のウェルカムスクリーンが表示されたら、少し待ってからページを更新してください。
-
 
 ## 既存のリソースでのデプロイ
 すでに必要なリソースがデプロイ済みの場合、下記の環境変数に値をセットして `azd up` します。
@@ -120,7 +114,7 @@ Then bring down the project code:
 1. Run `azd env set AZURE_OPENAI_EMB_DEPLOYMENT {既存の GPT Emeddings デプロイ名}`. embeddings モデルのデプロイがデフォルトの 'embedding' でない場合にのみ必要です。
 1. Run `azd up` - これにより、残りの Azure リソースがプロビジョニングされ、`./data` フォルダにあるファイルに基づいて検索インデックスを構築するなど、これらのリソースにこのサンプルがデプロイされます。
 
-> NOTE: 既存の Search Account や Storage Account を利用することもできる。 既存のリソースを設定するために `azd env set` に渡す環境変数のリストについては `./infra/main.parameters.json` を参照してください。
+> NOTE: 既存の Search Account や Storage Account を利用することもできる。 既存のリソースを設定するために `azd env set` に渡す環境変数のリストについては `./infra/main.parameters.json` を参照すること。
 
 ### 再デプロイ
 
@@ -185,6 +179,25 @@ Application Insights と各リクエストのトレース、エラーのログ�
 
 その後、特定のユーザーまたはグループへのアクセスを制限するには、[Azure AD アプリを Azure AD テナントの一連のユーザーに制限する](https://learn.microsoft.com/azure/active-directory/develop/howto-restrict-your-app-to-a-set-of-users) の手順に従って、Enterprise Application の下の "Assignment Required?" オプションを変更し、ユーザー/グループへのアクセスを割り当てます。 明示的にアクセス権が付与されていないユーザーには、「AADSTS50105: Your administrator has configured the application <app_name> to block users unless they are specifically granted ('assigned') access to the application.」というエラーメッセージが表示されます。
 
+## Running locally
+
+You can only run locally **after** having successfully run the `azd up` command. If you haven't yet, follow the steps in [Azure deployment](#azure-deployment) above.
+
+1. Run `azd auth login`
+2. Change dir to `app`
+3. Run `./start.ps1` or `./start.sh` or run the "VS Code Task: Start App" to start the project locally.
+
+## Using the app
+
+* In Azure: navigate to the Azure WebApp deployed by azd. The URL is printed out when azd completes (as "Endpoint"), or you can find it in the Azure portal.
+* Running locally: navigate to 127.0.0.1:50505
+
+Once in the web app:
+
+* Try different topics in chat or Q&A context. For chat, try follow up questions, clarifications, ask to simplify or elaborate on answer, etc.
+* Explore citations and sources
+* Click on "settings" to try different options, tweak prompts, etc.
+
 ## Productionizing
 
 This sample is designed to be a starting point for your own production application,
@@ -234,14 +247,14 @@ to production. Here are some things to consider:
 <details>
 <summary>Azure Cognitive Search は大きな文書の検索をサポートしているのに、なぜ PDF をチャンクに分割する必要があるのでしょうか？</summary>
 
-チャンキングによって、トークンの制限のために OpenAI に送信する情報量を制限することができます。コンテンツを分割することで、OpenAI に注入できる潜在的なテキストのチャンクを簡単に見つけることができます。私たちが使っているチャンキングの方法は、あるチャンクが終わると次のチャンクが始まるように、テキストのスライディングウィンドウを活用します。これにより、テキストのコンテキストが失われる可能性を減らすことができます。
+チャンキングによって、トークンの制限のために OpenAI に送信する情報量を制限することができます。コンテンツを分割することで、OpenAI に注入できる潜在的なテキストのチャンクを簡単に見つけることができます。私たちが使っているチャンキングの方法は、あるチャンクが終わると次のチャンクが始まるように、テキストのスライディングウィンドウを活用します。これにより、テキストの文脈が失われる可能性を減らすことができます。
 
 </details>
 
 <details>
 <summary>すべてを再デプロイすることなく、追加の PDF をアップロードするにはどうすればよいでしょうか？</summary>
 
-さらに PDF をアップロードするには、それらを `data/` フォルダに入れ、`./scripts/prepdocs.sh` または `./scripts/prepdocs.ps1` を実行します。既存のドキュメントの再アップロードを避けるために、それらを data フォルダの外に移動します。前にアップロードされたものをチェックする機能を実装することもできます。
+さらに PDF をアップロードするには、それらを `data/` フォルダに入れ、`./scripts/prepdocs.sh` または `./scripts/prepdocs.ps1` を実行する。既存のドキュメントの再アップロードを避けるために、それらを data フォルダの外に移動する。前にアップロードされたものをチェックする機能を実装することもできる。
 </details>
 
 <details>
