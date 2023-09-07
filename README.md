@@ -58,11 +58,11 @@
 
 価格はリージョンや利用方法によって異なるため、あなたの利用方法に対する正確なコストを予測することはできません。ただし、以下のリソースについては、[Azure 価格計算ツール](https://azure.com/e/8ffbe5b1919c4c72aed89b022294df76) をお試しください。
 
-- Azure App Service: Basic Tier 1CPU コア、1.75GB RAM。1 時間あたりの[価格](https://azure.microsoft.com/pricing/details/app-service/linux/)
-- Azure OpenAI: Standard、ChatGPT、Ada モデル。使用された 1K トークンあたりの価格、および 1 問あたり少なくとも 1K トークンが使用されます。[価格](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/)
-- Form Recognizer: SO(スタンダード)プランは、あらかじめ構築されたレイアウトを使用します。価格はドキュメント 1 ページあたり、サンプルドキュメントは合計 261 ページです。[価格](https://azure.microsoft.com/pricing/details/form-recognizer/)
-- Azure Cognitive Search: Standard tier, 1 レプリカ、無料レベルのセマンティック検索。1時間あたりの[価格](https://azure.microsoft.com/pricing/details/search/)
-- Azure Blob Storage: Standard tier ZRS（ゾーン冗長）。ストレージと読み取り操作ごとの価格。[価格](https://azure.microsoft.com/pricing/details/storage/blobs/)
+- Azure App Service: Basic Tier、1CPU コア、1.75GB RAM。1 時間あたりの[価格](https://azure.microsoft.com/pricing/details/app-service/linux/)
+- Azure OpenAI: Standard Tier、ChatGPT、Ada モデル。使用された 1K トークンあたりの価格、および 1 問あたり少なくとも 1K トークンが使用されます。[価格](https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/)
+- Form Recognizer: SO(スタンダード) Tier は、あらかじめ構築されたレイアウトを使用します。価格はドキュメント 1 ページあたり、サンプルドキュメントは合計 261 ページです。[価格](https://azure.microsoft.com/pricing/details/form-recognizer/)
+- Azure Cognitive Search: Standard Tier, 1 レプリカ、無料レベルのセマンティック検索。1 時間あたりの[価格](https://azure.microsoft.com/pricing/details/search/)
+- Azure Blob Storage: Standard Tier ZRS（ゾーン冗長）。ストレージと読み取り操作ごとの価格。[価格](https://azure.microsoft.com/pricing/details/storage/blobs/)
 - Azure Monitor: 従量課金制。費用は、取り込んだデータに基づいて計算されます。[価格](https://azure.microsoft.com/pricing/details/monitor/)
 
 コストを削減するために、`infra` フォルダの下のパラメータファイルを変更することで、Azure App Service、Azure Cognitive Search、Form Recognizer の無料 SKU に切り替えることができます。例えば、無料の Cognitive Search リソースは 1 サブスクリプションにつき 1 つまでで、無料の Form Recognizer リソースは各ドキュメントの最初の 2 ページのみを分析します。また、`data` フォルダ内のドキュメント数を減らすか、`prepdocs.py` スクリプトを実行する `azure.yaml` の postprovision フックを削除することで、Form Recognizer に関連するコストを削減することができます。
@@ -76,8 +76,8 @@
 
 * [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
 * [Python 3.9+](https://www.python.org/downloads/)
-  * **重要**: セットアップスクリプトを動作させるには、Windows のパスに Python と pip パッケージマネージャが含まれている必要があります。
-  * **重要**: コンソールから `python --version` を実行できることを確認します。Ubuntu では、`python` を `python3` にリンクするために、`sudo apt install python-is-python3` を実行する必要があるかもしれない。
+  * **重要**: セットアップスクリプトを動作させるには、Windows のパスに Python と pip パッケージマネージャが含まれている必要があります。Python を Microsoft Store 経由でインストールすると、うまく実行できないことがあります。Python 公式サイトからインストーラをダウンロードして、手動でインストールしてください。
+  * **重要**: コンソールから `python --version` を実行できることを確認します。Ubuntu では、`python` を `python3` にリンクするために、`sudo apt install python-is-python3` を実行する必要があるかもしれません。
 * [Node.js 14+](https://nodejs.org/en/download/)
 * [Git](https://git-scm.com/downloads)
 * [Powershell 7+ (pwsh)](https://github.com/powershell/powershell) - Windows ユーザーのみ。
@@ -94,7 +94,7 @@ GitHub Codespaces または VS Code Remote Containers を使えば、このレ�
 
 ### 新規でデプロイする
 
-既存の Azure サービスがなく、新しいデプロイから始めたい場合は、以下のコマンドを実行する。
+既存の Azure サービスがなく、新しいデプロイから始めたい場合は、以下のコマンドを実行します。
 
 1. `azd up` を実行する - Azure リソースをプロビジョニングし、`./data` フォルダにあるファイルに基づいて検索インデックスを構築するなど、これらのリソースにこのサンプルをデプロイします。
     * 2 つの場所を選択するプロンプトが表示されます。1 つは大部分のリソース用、もう 1 つは OpenAI リソース用です。このロケーションリストは[OpenAI model 利用可能リージョン表](https://learn.microsoft.com/azure/cognitive-services/openai/concepts/models#model-summary-table-and-region-availability)に基づいており、可用性が変わると古くなる可能性があります。
@@ -114,7 +114,7 @@ GitHub Codespaces または VS Code Remote Containers を使えば、このレ�
 1. Run `azd env set AZURE_OPENAI_EMB_DEPLOYMENT {既存の GPT Emeddings デプロイ名}`. embeddings モデルのデプロイがデフォルトの 'embedding' でない場合にのみ必要です。
 1. Run `azd up` - これにより、残りの Azure リソースがプロビジョニングされ、`./data` フォルダにあるファイルに基づいて検索インデックスを構築するなど、これらのリソースにこのサンプルがデプロイされます。
 
-> NOTE: 既存の Search Account や Storage Account を利用することもできる。 既存のリソースを設定するために `azd env set` に渡す環境変数のリストについては `./infra/main.parameters.json` を参照すること。
+> NOTE: 既存の Search Account や Storage Account を利用することもできる。 既存のリソースを設定するために `azd env set` に渡す環境変数のリストについては `./infra/main.parameters.json` を参照してください。
 
 ### 再デプロイ
 
@@ -247,14 +247,14 @@ to production. Here are some things to consider:
 <details>
 <summary>Azure Cognitive Search は大きな文書の検索をサポートしているのに、なぜ PDF をチャンクに分割する必要があるのでしょうか？</summary>
 
-チャンキングによって、トークンの制限のために OpenAI に送信する情報量を制限することができます。コンテンツを分割することで、OpenAI に注入できる潜在的なテキストのチャンクを簡単に見つけることができます。私たちが使っているチャンキングの方法は、あるチャンクが終わると次のチャンクが始まるように、テキストのスライディングウィンドウを活用します。これにより、テキストの文脈が失われる可能性を減らすことができます。
+チャンキングによって、トークンの制限のために OpenAI に送信する情報量を制限することができます。コンテンツを分割することで、OpenAI に注入できる潜在的なテキストのチャンクを簡単に見つけることができます。私たちが使っているチャンキングの方法は、あるチャンクが終わると次のチャンクが始まるように、テキストのスライディングウィンドウを活用します。これにより、テキストのコンテキストが失われる可能性を減らすことができます。
 
 </details>
 
 <details>
 <summary>すべてを再デプロイすることなく、追加の PDF をアップロードするにはどうすればよいでしょうか？</summary>
 
-さらに PDF をアップロードするには、それらを `data/` フォルダに入れ、`./scripts/prepdocs.sh` または `./scripts/prepdocs.ps1` を実行する。既存のドキュメントの再アップロードを避けるために、それらを data フォルダの外に移動する。前にアップロードされたものをチェックする機能を実装することもできる。
+さらに PDF をアップロードするには、それらを `data/` フォルダに入れ、`./scripts/prepdocs.sh` または `./scripts/prepdocs.ps1` を実行します。既存のドキュメントの再アップロードを避けるために、それらを data フォルダの外に移動します。前にアップロードされたものをチェックする機能を実装することもできます。
 </details>
 
 <details>
