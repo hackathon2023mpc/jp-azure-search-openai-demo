@@ -1,8 +1,10 @@
 import io
+import json
 import logging
 import mimetypes
 import os
 import time
+from typing import AsyncGenerator
 
 import openai
 from azure.identity.aio import DefaultAzureCredential
@@ -17,6 +19,7 @@ from quart import (
     abort,
     current_app,
     jsonify,
+    make_response,
     request,
     send_file,
     send_from_directory,
@@ -72,7 +75,7 @@ async def assets(path):
 # can access all the files. This is also slow and memory hungry.
 
 # この例を自己完結的なものにするために、アプリ内からblobストレージにコンテンツファイルを配信する。
-# *** NOTE *** この例では、コンテンツファイルが公開されているか、少なくともアプリの全ユーザーが 
+# *** NOTE *** この例では、コンテンツファイルが公開されているか、少なくともアプリの全ユーザーが
 # すべてのファイルにアクセスできることを前提としています。また, これは低速でメモリを消費します.
 @bp.route("/content/<path>")
 async def content_file(path):
@@ -121,11 +124,38 @@ async def chat():
         impl = current_app.config[CONFIG_CHAT_APPROACHES].get(approach)
         if not impl:
             return jsonify({"error": "unknown approach"}), 400
-        r = await impl.run(request_json["history"], request_json.get("overrides") or {})
+        # Workaround for: https://github.com/openai/openai-python/issues/371
+        async with aiohttp.ClientSession() as s:
+            openai.aiosession.set(s)
+            r = await impl.run_without_streaming(request_json["history"], request_json.get("overrides", {}))
         return jsonify(r)
     except Exception as e:
         logging.exception("Exception in /chat")
         return jsonify({"error": str(e)}), 500
+
+
+async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str, None]:
+    async for event in r:
+        yield json.dumps(event, ensure_ascii=False) + "\n"
+
+@bp.route("/chat_stream", methods=["POST"])
+async def chat_stream():
+    if not request.is_json:
+        return jsonify({"error": "request must be json"}), 415
+    request_json = await request.get_json()
+    approach = request_json["approach"]
+    try:
+        impl = current_app.config[CONFIG_CHAT_APPROACHES].get(approach)
+        if not impl:
+            return jsonify({"error": "unknown approach"}), 400
+        response_generator = impl.run_with_streaming(request_json["history"], request_json.get("overrides", {}))
+        response = await make_response(format_as_ndjson(response_generator))
+        response.timeout = None # type: ignore
+        return response
+    except Exception as e:
+        logging.exception("Exception in /chat")
+        return jsonify({"error": str(e)}), 500
+
 
 @bp.before_request
 async def ensure_openai_token():
@@ -155,7 +185,7 @@ async def setup_clients():
     blob_client = BlobServiceClient(
         account_url=f"https://{AZURE_STORAGE_ACCOUNT}.blob.core.windows.net",
         credential=azure_credential)
-    
+
     # Set up a Cosmos DB client to store the chat history
     endpoint = 'https://<Your-CosmosDB-Account>.documents.azure.com:443/'
     key = '<Your-CosmosDB-Key>'
