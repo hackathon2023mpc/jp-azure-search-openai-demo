@@ -68,6 +68,8 @@
 
 #### ローカルで実行する場合
 
+First install the required tools:
+
 * [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
 * [Python 3.9+](https://www.python.org/downloads/)
   * **重要**: セットアップスクリプトを動作させるには、Windows のパスに Python と pip パッケージマネージャが含まれている必要があります。Python を Microsoft Store 経由でインストールすると、うまく実行できないことがあります。Python 公式サイトからインストーラをダウンロードして、手動でインストールしてください。
@@ -87,6 +89,15 @@ GitHub Codespaces または VS Code Remote Containers を使えば、このレ�
 [![Open in Remote - Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Remote%20-%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/azure-samples/azure-search-openai-demo)
 
 ### 新規でデプロイする
+* [Powershell 7+ (pwsh)](https://github.com/powershell/powershell) - For Windows users only.
+  * **Important**: Ensure you can run `pwsh.exe` from a PowerShell terminal. If this fails, you likely need to upgrade PowerShell.
+
+Then bring down the project code:
+
+1. Create a new folder and switch to it in the terminal
+1. Run `azd auth login`
+1. Run `azd init -t azure-search-openai-demo`
+    * note that this command will initialize a git repository and you do not need to clone this repository
 
 既存の Azure サービスがなく、新しいデプロイから始めたい場合は、以下のコマンドを実行します。
 
@@ -174,6 +185,44 @@ Application Insights と各リクエストのトレース、エラーのログ�
 
 その後、特定のユーザーまたはグループへのアクセスを制限するには、[Azure AD アプリを Azure AD テナントの一連のユーザーに制限する](https://learn.microsoft.com/azure/active-directory/develop/howto-restrict-your-app-to-a-set-of-users) の手順に従って、Enterprise Application の下の "Assignment Required?" オプションを変更し、ユーザー/グループへのアクセスを割り当てます。 明示的にアクセス権が付与されていないユーザーには、「AADSTS50105: Your administrator has configured the application <app_name> to block users unless they are specifically granted ('assigned') access to the application.」というエラーメッセージが表示されます。
 
+## Productionizing
+
+This sample is designed to be a starting point for your own production application,
+but you should do a thorough review of the security and performance before deploying
+to production. Here are some things to consider:
+
+* **OpenAI Capacity**: The default TPM (tokens per minute) is set to 30K. That is equivalent
+  to approximately 30 conversations per minute (assuming 1K per user message/response).
+  You can increase the capacity by changing the `chatGptDeploymentCapacity` and `embeddingDeploymentCapacity`
+  parameters in `infra/main.bicep` to your account's maximum capacity.
+  You can also view the Quotas tab in [Azure OpenAI studio](https://oai.azure.com/)
+  to understand how much capacity you have.
+* **Azure Storage**: The default storage account uses the `Standard_LRS` SKU.
+  To improve your resiliency, we recommend using `Standard_ZRS` for production deployments,
+  which you can specify using the `sku` property under the `storage` module in `infra/main.bicep`.
+* **Azure Cognitive Search**: The default search service uses the `Standard` SKU
+  with the free semantic search option, which gives you 1000 free queries a month.
+  Assuming your app will experience more than 1000 questions, you should either change `semanticSearch`
+  to "standard" or disable semantic search entirely in the `/app/backend/approaches` files.
+  If you see errors about search service capacity being exceeded, you may find it helpful to increase
+  the number of replicas by changing `replicaCount` in `infra/core/search/search-services.bicep`
+  or manually scaling it from the Azure Portal.
+* **Azure App Service**: The default app service plan uses the `Basic` SKU with 1 CPU core and 1.75 GB RAM.
+  We recommend using a Premium level SKU, starting with 1 CPU core.
+  You can use auto-scaling rules or scheduled scaling rules,
+  and scale up the maximum/minimum based on load.
+* **Authentication**: By default, the deployed app is publicly accessible.
+  We recommend restricting access to authenticated users.
+  See [Enabling authentication](#enabling-authentication) above for how to enable authentication.
+* **Networking**: We recommend deploying inside a Virtual Network. If the app is only for
+  internal enterprise use, use a private DNS zone. Also consider using Azure API Management (APIM)
+  for firewalls and other forms of protection.
+  For more details, read [Azure OpenAI Landing Zone reference architecture](https://techcommunity.microsoft.com/t5/azure-architecture-blog/azure-openai-landing-zone-reference-architecture/ba-p/3882102).
+* **Loadtesting**: We recommend running a loadtest for your expected number of users.
+  You can use the [locust tool](https://docs.locust.io/) with the `locustfile.py` in this sample
+  or set up a loadtest with Azure Load Testing.
+
+
 ## Resources
 
 * [Revolutionize your Enterprise Data with ChatGPT: Next-gen Apps w/ Azure OpenAI and Cognitive Search](https://aka.ms/entgptsearchblog)
@@ -214,6 +263,23 @@ https://github.com/Microsoft/sample-app-aoai-chatGPT/
 <summary>このサンプルで GPT-4 をどのように使うのですか？</summary>
 
 `infra/main.bicep` の `chatGptModelName` を 'gpt-35-turbo' ではなく 'gpt-4' に変更してください。また、アカウントが許可している TPM の容量に応じて、その行の上の容量を調整する必要があるかもしれません。
+</details>
+
+<details>
+<summary>What is the difference between the Chat and Ask tabs?</summary>
+
+The chat tab uses the approach programmed in [chatreadretrieveread.py](https://github.com/Azure-Samples/azure-search-openai-demo/blob/main/app/backend/approaches/chatreadretrieveread.py).
+
+- It uses the ChatGPT API to turn the user question into a good search query.
+- It queries Azure Cognitive Search for search results for that query (optionally using the vector embeddings for that query).
+- It then combines the search results and original user question, and asks ChatGPT API to answer the question based on the sources. It includes the last 4K of message history as well (or however many tokens are allowed by the deployed model).
+
+The ask tab uses the approach programmed in [retrievethenread.py](https://github.com/Azure-Samples/azure-search-openai-demo/blob/main/app/backend/approaches/retrievethenread.py).
+
+- It queries Azure Cognitive Search for search results for the user question (optionally using the vector embeddings for that question).
+- It then combines the search results and user question, and asks ChatGPT API to answer the question based on the sources.
+
+There are also two other /ask approaches with a slightly different approach, but they aren't currently working due to [langchain compatibility issues](https://github.com/Azure-Samples/azure-search-openai-demo/issues/541).
 </details>
 
 
